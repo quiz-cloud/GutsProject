@@ -17,23 +17,23 @@ class GUTS_API UGutsInputComponent : public UEnhancedInputComponent
 	
 public:
 	template<class UserClass, typename PressFuncType, typename ReleaseFuncType, typename HeldFuncType>
-	void GutsBindAction(UGutsInputConfig* InputConfig, UserClass* Object, PressFuncType PressFunc, HeldFuncType HeldFunc, ReleaseFuncType ReleaseFunc )
+	void BindAbilityAction(UGutsInputConfig* InputConfig, UserClass* Object, PressFuncType PressFunc, HeldFuncType HeldFunc, ReleaseFuncType ReleaseFunc )
 	{
 		for (FGutsInputAction& Action : InputConfig->GutsInputActions)
 		{
-			if (Action.InputAction && Action.GameplayTag.IsValid())
+			if (Action.InputAction && Action.InputTag.IsValid())
 			{
 				if (PressFunc)
 				{
-					BindAction(Action.InputAction, ETriggerEvent::Started, Object, PressFunc, Action.GameplayTag);
+					BindAction(Action.InputAction, ETriggerEvent::Started, Object, PressFunc, Action.InputTag);
 				}
 				if (HeldFunc)
 				{
-					BindAction(Action.InputAction, ETriggerEvent::Triggered, Object, HeldFunc, Action.GameplayTag);
+					BindAction(Action.InputAction, ETriggerEvent::Triggered, Object, HeldFunc, Action.InputTag);
 				}
 				if (ReleaseFunc)
 				{
-					BindAction(Action.InputAction, ETriggerEvent::Completed, Object, ReleaseFunc, Action.GameplayTag);
+					BindAction(Action.InputAction, ETriggerEvent::Completed, Object, ReleaseFunc, Action.InputTag);
 				}
 			}
 		}

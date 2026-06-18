@@ -11,6 +11,7 @@
 #include "ComboGraphEdge.generated.h"
 
 class UAnimNotify;
+class UComboGraphAbilityTask_StartGraph;
 class UComboGraphNodeBase;
 class UInputAction;
 
@@ -20,6 +21,16 @@ class COMBOGRAPH_API UComboGraphEdge : public UObject
 	GENERATED_BODY()
 
 public:
+	/**
+	 * X6-style extension point: project-defined input data for this edge.
+	 *
+	 * Guts uses this to store InputTag + activation policy data on the edge, then lets ASC
+	 * choose the edge from the current node's candidate list instead of binding this edge
+	 * directly to a concrete Enhanced Input action.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Instanced, Category = "Combo Graph | Transition")
+	TObjectPtr<UObject> ComboInputData;
+
 	/**
 	 * The EnhancedInput Action to consider to transition to next node.
 	 */
@@ -80,6 +91,15 @@ public:
 
 	/** Returns whether configured trigger event for this Edge is set on Canceled event */
 	bool IsUsingCanceledTriggerEvent() const;
+
+	/**
+	 * X6-style bridge back to the running task.
+	 *
+	 * ASC stores duplicated ComboInputData and only keeps a weak OwnerEdge pointer, so it
+	 * needs this helper to ask the running ComboGraph task to confirm the selected edge.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Combo Graph")
+	UComboGraphAbilityTask_StartGraph* K2_GetOwningTask() const;
 
 	/** Enhanced Input Action instance value getter */
 	FInputActionInstance GetCurrentInputActionInstance() const;

@@ -2,9 +2,8 @@
 
 
 #include "Character/GutsCharacter.h"
-
-#include "AbilitySystemComponent.h"
 #include "GutsAbilitySystemComponent.h"
+#include "AbilitySystemComponent.h"
 #include "Player/GutsPlayerState.h"
 
 //Serve
@@ -34,7 +33,13 @@ void AGutsCharacter::InitAbilityActorInfo()
 	AbilitySystemComponent = Cast<UGutsAbilitySystemComponent>(ASC);
 }
 
-UAbilitySystemComponent* AGutsCharacter::GetAbilitySystemComponent() const
+UGutsAbilitySystemComponent* AGutsCharacter::GetASC()
 {
+	if (AbilitySystemComponent == nullptr)
+	{
+		const AGutsPlayerState* GutsPlayerState = GetPlayerState<AGutsPlayerState>();
+		UAbilitySystemComponent* ASC = GutsPlayerState->GetAbilitySystemComponent();
+		AbilitySystemComponent = Cast<UGutsAbilitySystemComponent>(ASC);
+	}
 	return AbilitySystemComponent;
 }

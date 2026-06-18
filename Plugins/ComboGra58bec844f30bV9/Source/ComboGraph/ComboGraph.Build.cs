@@ -10,7 +10,9 @@ public class ComboGraph : ModuleRules
 			new string[]
 			{
 				"Core",
+				"CoreUObject",
 				"GameplayAbilities",
+				"GameplayTags",
 				"EnhancedInput",
 			}
 		);
@@ -20,10 +22,8 @@ public class ComboGraph : ModuleRules
 			new string[]
 			{
 				"AIModule",
-				"CoreUObject",
 				"DeveloperSettings",
 				"Engine",
-				"GameplayTags",
 				"GameplayTasks",
 				"Niagara",
 				"Slate",

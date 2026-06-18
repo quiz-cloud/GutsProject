@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystemInterface.h"
 #include "Character/GutsCharacterBase.h"
 #include "GutsCharacter.generated.h"
 
@@ -12,7 +11,7 @@ class UGutsAbilitySystemComponent;
  * 
  */
 UCLASS()
-class GUTS_API AGutsCharacter : public AGutsCharacterBase, public IAbilitySystemInterface
+class GUTS_API AGutsCharacter : public AGutsCharacterBase
 {
 	GENERATED_BODY()
 	
@@ -20,7 +19,7 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 	
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	UGutsAbilitySystemComponent* GetASC();
 private:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UGutsAbilitySystemComponent> AbilitySystemComponent;

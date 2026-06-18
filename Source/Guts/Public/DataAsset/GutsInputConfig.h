@@ -14,11 +14,13 @@ class UInputAction;
 USTRUCT(BlueprintType)
 struct FGutsInputAction
 {
+	GENERATED_BODY()
+	
 	UPROPERTY(EditAnywhere)
 	UInputAction* InputAction = nullptr;
 	
 	UPROPERTY(EditAnywhere)
-	FGameplayTag GameplayTag = FGameplayTag();
+	FGameplayTag InputTag = FGameplayTag();
 };
 
 UCLASS()
