@@ -7,7 +7,7 @@
 #include "GameFramework/PlayerState.h"
 #include "GutsPlayerState.generated.h"
 
-class UGutsAbilitySystemComponent;
+class UAbilitySystemComponent;
 /**
  * 
  */
@@ -22,5 +22,5 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 protected:
 	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UGutsAbilitySystemComponent> AbilitySystemComponent;
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 };

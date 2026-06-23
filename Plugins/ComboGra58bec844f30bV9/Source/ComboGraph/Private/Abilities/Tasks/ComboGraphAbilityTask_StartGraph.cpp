@@ -23,7 +23,6 @@
 #include "Graph/ComboGraphNodeEntry.h"
 #include "Graph/ComboGraphNodeMontage.h"
 #include "Graph/ComboGraphNodeSequence.h"
-#include "Interface/IComboGraphAbilitySystemInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Utils/ComboGraphUtils.h"
@@ -448,12 +447,6 @@ void UComboGraphAbilityTask_StartGraph::SetupInputBindings()
 
 	ClearInputBindings();
 
-	TArray<UObject*> ComboInputDataList;
-
-	// Guts/X6-style input routing:
-	// collect the current node's edge input data and push it to ASC, so ASC can choose
-	// an edge from semantic InputTags and activation policies. The legacy InputAction
-	// binding path is kept below for existing ComboGraph assets.
 	for (UComboGraphNodeBase* ChildNode : CurrentNode->ChildrenNodes)
 	{
 		UComboGraphEdge* Edge = CurrentNode->GetEdge(ChildNode);
@@ -464,11 +457,6 @@ void UComboGraphAbilityTask_StartGraph::SetupInputBindings()
 
 		// Reset back to false when we start listening for input in case it was switched previously.
 		Edge->SetIsConfirmed(false);
-
-		if (Edge->ComboInputData)
-		{
-			ComboInputDataList.Add(Edge->ComboInputData);
-		}
 
 		if (InputComponent && Edge->TransitionInput)
 		{
@@ -495,60 +483,6 @@ void UComboGraphAbilityTask_StartGraph::SetupInputBindings()
 		const FString Prefix = FComboGraphUtils::GetWorldLogPrefix(GetWorld());
 		CG_RUNTIME_LOG(Log, TEXT("%sSetupInputBindings: No Input Component"), *Prefix)
 	}
-
-	if (AbilitySystemComponent.IsValid())
-	{
-		if (IComboGraphAbilitySystemInterface* ComboGraphASCInterface = Cast<IComboGraphAbilitySystemInterface>(AbilitySystemComponent.Get()))
-		{
-			// ASC owns runtime input state, so it receives only the currently reachable edge inputs.
-			ComboGraphASCInterface->UpdateNextComboGraphInputList(ComboInputDataList);
-		}
-	}
-}
-
-bool UComboGraphAbilityTask_StartGraph::ConfirmComboGraphInput(UComboGraphEdge* Edge)
-{
-	// Called by ASC after it has matched an InputTag against the current node's
-	// ComboInputData list. From here onward, use the plugin's original confirmation,
-	// combo-window, queue, and transition behavior.
-	if (!Edge)
-	{
-		CG_RUNTIME_LOG(Error, TEXT("ConfirmComboGraphInput for Node %s - Invalid Edge"), *GetNameSafe(CurrentNode))
-		return false;
-	}
-
-	if (!GetAvatarActorFromActorInfo())
-	{
-		CG_RUNTIME_LOG(Error, TEXT("ConfirmComboGraphInput %s but owning actor is not set"), *GetName())
-		return false;
-	}
-
-	if (!Edge->IsUsingCanceledTriggerEvent() && !IsComboWindowOpened())
-	{
-		return false;
-	}
-
-	if (Edge->IsConfirmed())
-	{
-		return false;
-	}
-
-	Edge->SetIsConfirmed(true);
-
-	for (UComboGraphNodeBase* ChildNode : CurrentNode->ChildrenNodes)
-	{
-		if (UComboGraphNodeAnimBase* ChildAnimNode = Cast<UComboGraphNodeAnimBase>(ChildNode))
-		{
-			const UComboGraphEdge* CurrentEdge = CurrentNode->GetEdge(ChildAnimNode);
-			if (CurrentEdge == Edge)
-			{
-				HandleInputConfirmed(ChildAnimNode, CurrentEdge);
-				break;
-			}
-		}
-	}
-
-	return Edge->IsConfirmed();
 }
 
 void UComboGraphAbilityTask_StartGraph::ReceivedInputConfirm(const FInputActionInstance& InputActionInstance, UComboGraphEdge* Edge)
@@ -617,15 +551,6 @@ void UComboGraphAbilityTask_StartGraph::ReceivedInputConfirm(const FInputActionI
 
 void UComboGraphAbilityTask_StartGraph::ClearInputBindings()
 {
-	if (AbilitySystemComponent.IsValid())
-	{
-		if (IComboGraphAbilitySystemInterface* ComboGraphASCInterface = Cast<IComboGraphAbilitySystemInterface>(AbilitySystemComponent.Get()))
-		{
-			// Current node is no longer listening; clear ASC candidates so old edges cannot be selected.
-			ComboGraphASCInterface->ClearNextComboGraphInputList();
-		}
-	}
-
 	for (const uint32 InputHandle : InputHandles)
 	{
 		if (InputComponent)

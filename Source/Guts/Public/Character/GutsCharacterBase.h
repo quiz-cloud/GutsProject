@@ -3,27 +3,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "GameFramework/Character.h"
 #include "GutsCharacterBase.generated.h"
 
+class UGameplayAbility;
+
 UCLASS()
-class GUTS_API AGutsCharacterBase : public ACharacter
+class GUTS_API AGutsCharacterBase : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
-	AGutsCharacterBase();
-
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	UPROPERTY()
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Guts|Ability")
+	TArray<TSubclassOf<UGameplayAbility>> StartAbilities;
+	
+	void AddStartAbilities() const;
 };

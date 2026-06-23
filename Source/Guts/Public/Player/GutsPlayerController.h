@@ -36,7 +36,11 @@ public:
 	UGutsAbilitySystemComponent* GetASC();
 	
 	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
+	
 private:
+	UPROPERTY()
+	TObjectPtr<UGutsAbilitySystemComponent> GutsAbilitySystemComponent;
+	
 	void Move(const FInputActionValue& Value);
 	void Look();
 	
@@ -45,9 +49,6 @@ private:
 	void OnInputReleased(FGameplayTag InputTag);
 	
 protected:
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UGutsAbilitySystemComponent> AbilitySystemComponent;
-	
 	virtual void BeginPlay() override;
 	
 	virtual void SetupInputComponent() override;

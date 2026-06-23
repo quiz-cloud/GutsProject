@@ -85,9 +85,6 @@ public:
 	/** Provides getter for combo window state for external code to know (namely edges) */
 	bool IsComboWindowOpened() const { return bComboWindowOpened; };
 
-	/** Confirms an externally selected combo edge, usually selected by ASC input-tag processing. */
-	bool ConfirmComboGraphInput(UComboGraphEdge* Edge);
-
 protected:
 
 	/** Cached Graph when activating the task for an actor (task param) */

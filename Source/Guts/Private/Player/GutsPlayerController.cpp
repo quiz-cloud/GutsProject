@@ -3,6 +3,7 @@
 
 #include "Player/GutsPlayerController.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include"EnhancedInputSubsystems.h"
 #include "GutsAbilitySystemComponent.h"
 #include "GutsInputComponent.h"
@@ -19,13 +20,11 @@ void AGutsPlayerController::SetupInputComponent()
 
 UGutsAbilitySystemComponent* AGutsPlayerController::GetASC()
 {
-	if (AbilitySystemComponent == nullptr)
+	if (GutsAbilitySystemComponent == nullptr)
 	{
-		const AGutsPlayerState* GutsPlayerState = GetPlayerState<AGutsPlayerState>();
-		UAbilitySystemComponent* ASC = GutsPlayerState->GetAbilitySystemComponent();
-		AbilitySystemComponent = Cast<UGutsAbilitySystemComponent>(ASC);
+		GutsAbilitySystemComponent = Cast<UGutsAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn()));
 	}
-	return AbilitySystemComponent;
+	return GutsAbilitySystemComponent;
 }
 
 void AGutsPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)

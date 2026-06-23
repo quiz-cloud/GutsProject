@@ -18,11 +18,7 @@ class GUTS_API AGutsCharacter : public AGutsCharacterBase
 public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
-	
-	UGutsAbilitySystemComponent* GetASC();
+
 private:
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UGutsAbilitySystemComponent> AbilitySystemComponent;
-	
 	void InitAbilityActorInfo();
 };

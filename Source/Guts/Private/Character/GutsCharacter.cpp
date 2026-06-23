@@ -12,6 +12,7 @@ void AGutsCharacter::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 	
 	InitAbilityActorInfo();
+	AddStartAbilities();
 }
 
 //Client
@@ -28,18 +29,7 @@ void AGutsCharacter::OnRep_PlayerState()
 void AGutsCharacter::InitAbilityActorInfo()
 {
 	AGutsPlayerState* GutsPlayerState = GetPlayerState<AGutsPlayerState>();
-	UAbilitySystemComponent* ASC = GutsPlayerState->GetAbilitySystemComponent();
-	ASC->InitAbilityActorInfo(GutsPlayerState, this);
-	AbilitySystemComponent = Cast<UGutsAbilitySystemComponent>(ASC);
-}
+	GutsPlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(GutsPlayerState, this);
 
-UGutsAbilitySystemComponent* AGutsCharacter::GetASC()
-{
-	if (AbilitySystemComponent == nullptr)
-	{
-		const AGutsPlayerState* GutsPlayerState = GetPlayerState<AGutsPlayerState>();
-		UAbilitySystemComponent* ASC = GutsPlayerState->GetAbilitySystemComponent();
-		AbilitySystemComponent = Cast<UGutsAbilitySystemComponent>(ASC);
-	}
-	return AbilitySystemComponent;
+	AbilitySystemComponent = GutsPlayerState->GetAbilitySystemComponent();
 }
