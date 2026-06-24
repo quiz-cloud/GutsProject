@@ -19,6 +19,9 @@ class COMBOGRAPH_API UComboGraphEdge : public UObject
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Instanced, Category = "Combo Graph | Transition")
+	TObjectPtr<UObject> ComboInputData;
+	
 	/**
 	 * The EnhancedInput Action to consider to transition to next node.
 	 */

@@ -23,6 +23,7 @@
 #include "Graph/ComboGraphNodeEntry.h"
 #include "Graph/ComboGraphNodeMontage.h"
 #include "Graph/ComboGraphNodeSequence.h"
+#include "Interface/ComboGraphAbilitySystemInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Utils/ComboGraphUtils.h"
@@ -446,7 +447,9 @@ void UComboGraphAbilityTask_StartGraph::SetupInputBindings()
 	CG_RUNTIME_LOG(Log, TEXT("SetupInputBindings (ReceivedInput): Node %s"), CurrentNode ? *CurrentNode->GetName() : TEXT("None"))
 
 	ClearInputBindings();
-
+	
+	//CreatComboInputDataList For ASC
+	TArray<UObject*> ComboInputDataList;
 	for (UComboGraphNodeBase* ChildNode : CurrentNode->ChildrenNodes)
 	{
 		UComboGraphEdge* Edge = CurrentNode->GetEdge(ChildNode);
@@ -457,7 +460,12 @@ void UComboGraphAbilityTask_StartGraph::SetupInputBindings()
 
 		// Reset back to false when we start listening for input in case it was switched previously.
 		Edge->SetIsConfirmed(false);
-
+		//Get All ComboInputData for
+		if (Edge->ComboInputData)
+		{
+			ComboInputDataList.Add(Edge->ComboInputData);
+		}
+		
 		if (InputComponent && Edge->TransitionInput)
 		{
 			const UInputAction* InputAction = Edge->TransitionInput;
@@ -478,6 +486,14 @@ void UComboGraphAbilityTask_StartGraph::SetupInputBindings()
 		}
 	}
 
+	if (AbilitySystemComponent.IsValid())
+	{
+		if (IComboGraphAbilitySystemInterface* ComboGraphASCInterface = Cast<IComboGraphAbilitySystemInterface>(AbilitySystemComponent.Get()))
+		{
+			ComboGraphASCInterface->UpdateNextComboGraphInputList(ComboInputDataList);
+		}
+	}
+	
 	if (!InputComponent)
 	{
 		const FString Prefix = FComboGraphUtils::GetWorldLogPrefix(GetWorld());
@@ -551,6 +567,14 @@ void UComboGraphAbilityTask_StartGraph::ReceivedInputConfirm(const FInputActionI
 
 void UComboGraphAbilityTask_StartGraph::ClearInputBindings()
 {
+	if (AbilitySystemComponent.IsValid())
+	{
+		if (IComboGraphAbilitySystemInterface* ComboGraphASCInterface = Cast<IComboGraphAbilitySystemInterface>(AbilitySystemComponent.Get()))
+		{
+			ComboGraphASCInterface->ClearNextComboGraphInputList();
+		}
+	}
+	
 	for (const uint32 InputHandle : InputHandles)
 	{
 		if (InputComponent)

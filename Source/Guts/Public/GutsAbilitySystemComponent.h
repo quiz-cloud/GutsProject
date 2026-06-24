@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
+#include "Interface/ComboGraphAbilitySystemInterface.h"
 #include "GutsAbilitySystemComponent.generated.h"
+
+class UGutsComboGraphInputData;
 
 USTRUCT()
 struct FGameplayAbilityInputSpecHandle
@@ -35,7 +38,7 @@ struct FGameplayAbilityInputSpecHandle
  * 
  */
 UCLASS()
-class GUTS_API UGutsAbilitySystemComponent : public UAbilitySystemComponent
+class GUTS_API UGutsAbilitySystemComponent : public UAbilitySystemComponent, public IComboGraphAbilitySystemInterface
 {
 	GENERATED_BODY()
 	
@@ -48,11 +51,25 @@ public:
 
 	void ProcessAbilityInput(float DeltaTime);
 
+    virtual void UpdateNextComboGraphInputList(const TArray<UObject*>& ComboInputDataList) override;
+	
+	virtual void ClearNextComboGraphInputList() override;
 protected:
 	TArray<FGameplayAbilitySpecHandle> InputPressedSpecHandles;
 	TArray<FGameplayAbilityInputSpecHandle> InputHeldSpecHandles;
 	TArray<FGameplayAbilityInputSpecHandle> InputReleasedSpecHandles;
-
+	
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UGutsComboGraphInputData>> NextComboGraphInputList;
+	
+	bool bComboGraphInputPressed = false;
+	bool bComboGraphInputReleased = false;
+	float ComboGraphInputHeldTimeSeconds = 0.f;
+	FGameplayTag ComboGraphPressedTag;
+	FGameplayTag ComboGraphReleasedTag;
 private:
 	FGameplayAbilityInputSpecHandle FindInputHeldSpecHandle(const FGameplayAbilitySpecHandle& InputSpecHandle);
+	
+	void ComboGraphInputPressed(bool bActivate, const FGameplayTag& InputTag = FGameplayTag());
+	void ComboGraphInputReleased(bool bActivate, const FGameplayTag& InputTag = FGameplayTag());
 };

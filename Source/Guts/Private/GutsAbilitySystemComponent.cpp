@@ -3,7 +3,9 @@
 
 #include "GutsAbilitySystemComponent.h"
 
+#include "Combo/GutsComboGraphInputData.h"
 #include "GameplayAbilitySystem/GutsGameplayAbility.h"
+#include "Graph/ComboGraphEdge.h"
 
 void UGutsAbilitySystemComponent::GiveAbilityByClass(TArray<TSubclassOf<UGameplayAbility>> AbilityClasses)
 {
@@ -16,6 +18,30 @@ void UGutsAbilitySystemComponent::GiveAbilityByClass(TArray<TSubclassOf<UGamepla
 			GiveAbility(AbilitySpec);
 		}
 	}
+}
+
+FGameplayAbilityInputSpecHandle UGutsAbilitySystemComponent::FindInputHeldSpecHandle(const FGameplayAbilitySpecHandle& InputSpecHandle)
+{
+	for (FGameplayAbilityInputSpecHandle& Handle : InputHeldSpecHandles)
+	{
+		if (InputSpecHandle == Handle.AbilitySpecHandle)
+		{
+			return Handle;
+		}
+	}
+	return FGameplayAbilityInputSpecHandle();
+}
+
+void UGutsAbilitySystemComponent::ComboGraphInputPressed(bool bActivate, const FGameplayTag& InputTag)
+{
+	bComboGraphInputPressed = bActivate;
+	ComboGraphPressedTag = InputTag;
+}
+
+void UGutsAbilitySystemComponent::ComboGraphInputReleased(bool bActivate, const FGameplayTag& InputTag)
+{
+	bComboGraphInputReleased = bActivate;
+	ComboGraphReleasedTag = InputTag;
 }
 
 void UGutsAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
@@ -34,6 +60,17 @@ void UGutsAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& Inp
 			
 			InputPressedSpecHandles.AddUnique(AbilitySpec.Handle);
 			InputHeldSpecHandles.AddUnique(InputHandle);
+		}
+	}
+
+	if (NextComboGraphInputList.Num() > 0)
+	{
+		for (UGutsComboGraphInputData* InputData : NextComboGraphInputList)
+		{
+			if (InputTag.MatchesTagExact(InputData->InputTag))
+			{
+				ComboGraphInputPressed(true, InputTag);
+			}
 		}
 	}
 
@@ -56,10 +93,20 @@ void UGutsAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& In
 				InputReleasedSpecHandles.AddUnique(InputHandle);
 				InputHeldSpecHandles.Remove(InputHandle);
 			}
-
 		}
 	}
-
+	
+	if (NextComboGraphInputList.Num() > 0)
+	{
+		for (UGutsComboGraphInputData* InputData : NextComboGraphInputList)
+		{
+			if (InputTag.MatchesTagExact(InputData->InputTag))
+			{
+				ComboGraphInputPressed(false);
+				ComboGraphInputReleased(true, InputTag);
+			}
+		}
+	}
 }
 
 void UGutsAbilitySystemComponent::ProcessAbilityInput(float DeltaTime)
@@ -123,14 +170,50 @@ void UGutsAbilitySystemComponent::ProcessAbilityInput(float DeltaTime)
 	InputReleasedSpecHandles.Reset();
 }
 
-FGameplayAbilityInputSpecHandle UGutsAbilitySystemComponent::FindInputHeldSpecHandle(const FGameplayAbilitySpecHandle& InputSpecHandle)
+void UGutsAbilitySystemComponent::UpdateNextComboGraphInputList(const TArray<UObject*>& ComboInputDataList)
 {
-	for (FGameplayAbilityInputSpecHandle& Handle : InputHeldSpecHandles)
+	NextComboGraphInputList.Reset();
+	
+	for (UObject* InputDataObject : ComboInputDataList)
 	{
-		if (InputSpecHandle == Handle.AbilitySpecHandle)
+		if (!InputDataObject)
 		{
-			return Handle;
+			continue;
 		}
+		
+		UComboGraphEdge* OwnerEdge = Cast<UComboGraphEdge>(InputDataObject->GetOuter());
+		if (!OwnerEdge)
+		{
+			continue;
+		}
+		
+		UGutsComboGraphInputData* InputData = Cast<UGutsComboGraphInputData>(InputDataObject);
+		if (!InputData)
+		{
+			continue;
+		}
+		
+		FObjectDuplicationParameters Params(InputData, this);
+		UGutsComboGraphInputData* RuntimeInputData = Cast<UGutsComboGraphInputData>(StaticDuplicateObjectEx(Params));
+		
+		if (!RuntimeInputData)
+		{
+			continue;
+		}
+		
+		RuntimeInputData->OwnerEdge = OwnerEdge;
+		NextComboGraphInputList.Add(RuntimeInputData);
 	}
-	return FGameplayAbilityInputSpecHandle();
 }
+
+void UGutsAbilitySystemComponent::ClearNextComboGraphInputList()
+{
+	NextComboGraphInputList.Reset();
+	
+	bComboGraphInputPressed = false;
+	bComboGraphInputReleased = false;
+	ComboGraphInputHeldTimeSeconds = 0.0f;
+	ComboGraphPressedTag = FGameplayTag();
+	ComboGraphReleasedTag = FGameplayTag();
+}
+
