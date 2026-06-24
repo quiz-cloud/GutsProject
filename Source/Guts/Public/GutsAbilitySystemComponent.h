@@ -48,12 +48,13 @@ public:
 	void AbilityInputTagPressed(const FGameplayTag& InputTag);
 	
 	void AbilityInputTagReleased(const FGameplayTag& InputTag);
-
+	
 	void ProcessAbilityInput(float DeltaTime);
-
-    virtual void UpdateNextComboGraphInputList(const TArray<UObject*>& ComboInputDataList) override;
+	
+	virtual void UpdateNextComboGraphInputList(const TArray<UObject*>& ComboInputDataList) override;
 	
 	virtual void ClearNextComboGraphInputList() override;
+
 protected:
 	TArray<FGameplayAbilitySpecHandle> InputPressedSpecHandles;
 	TArray<FGameplayAbilityInputSpecHandle> InputHeldSpecHandles;
@@ -67,9 +68,13 @@ protected:
 	float ComboGraphInputHeldTimeSeconds = 0.f;
 	FGameplayTag ComboGraphPressedTag;
 	FGameplayTag ComboGraphReleasedTag;
+	
 private:
 	FGameplayAbilityInputSpecHandle FindInputHeldSpecHandle(const FGameplayAbilitySpecHandle& InputSpecHandle);
 	
 	void ComboGraphInputPressed(bool bActivate, const FGameplayTag& InputTag = FGameplayTag());
 	void ComboGraphInputReleased(bool bActivate, const FGameplayTag& InputTag = FGameplayTag());
+	
+	void ProcessComboGraphInput(float DeltaTime);
+	void ClearComboGraphInput();
 };

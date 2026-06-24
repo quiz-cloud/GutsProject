@@ -91,6 +91,45 @@ UAnimMontage* UComboGraphAbilityTask_StartGraph::GetCurrentMontageFromAbility() 
 	return Ability->GetCurrentMontage();
 }
 
+bool UComboGraphAbilityTask_StartGraph::ConfirmComboGraphInput(UComboGraphEdge* Edge)
+{
+	if (!Edge)
+	{
+		return false;
+	}
+	
+	if (!GetAvatarActorFromActorInfo())
+	{
+		return false;
+	}
+	
+	if (!Edge->IsUsingCanceledTriggerEvent() && !IsComboWindowOpened())
+	{
+		return false;
+	}
+	
+	if (Edge->IsConfirmed())
+	{
+		return false;
+	}
+	
+	Edge->SetIsConfirmed(true);
+	
+	for (UComboGraphNodeBase* ChildNode : CurrentNode->ChildrenNodes)
+	{
+		if (UComboGraphNodeAnimBase* ChildAnimNode = Cast<UComboGraphNodeAnimBase>(ChildNode))
+		{
+			const UComboGraphEdge* CurEdge = CurrentNode->GetEdge(ChildAnimNode);
+			if (CurEdge == Edge)
+			{
+				HandleInputConfirmed(ChildAnimNode, CurEdge);
+				break;
+			}
+		}
+	}
+	return Edge->IsConfirmed();
+}
+
 void UComboGraphAbilityTask_StartGraph::Activate()
 {
 	CG_RUNTIME_LOG(Log, TEXT("UComboGraphAbilityTask_StartGraph::Activate ... for Graph: %s"), *GetNameSafe(RunningGraph))

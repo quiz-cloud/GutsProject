@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "Interface/ComboGraphInputDataInterface.h"
 #include "UObject/NoExportTypes.h"
 #include "GutsComboGraphInputData.generated.h"
 
@@ -21,7 +22,7 @@ enum class EGutsComboGraphInputActivationPolicy : uint8
 };
 
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
-class GUTS_API UGutsComboGraphInputData : public UObject
+class GUTS_API UGutsComboGraphInputData : public UObject, public IComboGraphInputDataInterface
 {
 	GENERATED_BODY()
 	

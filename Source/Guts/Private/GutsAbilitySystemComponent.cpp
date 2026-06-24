@@ -3,6 +3,7 @@
 
 #include "GutsAbilitySystemComponent.h"
 
+#include "Abilities/Tasks/ComboGraphAbilityTask_StartGraph.h"
 #include "Combo/GutsComboGraphInputData.h"
 #include "GameplayAbilitySystem/GutsGameplayAbility.h"
 #include "Graph/ComboGraphEdge.h"
@@ -44,6 +45,86 @@ void UGutsAbilitySystemComponent::ComboGraphInputReleased(bool bActivate, const 
 	ComboGraphReleasedTag = InputTag;
 }
 
+void UGutsAbilitySystemComponent::ProcessComboGraphInput(float DeltaTime)
+{
+	if (NextComboGraphInputList.Num() <= 0)
+	{
+		ClearComboGraphInput();
+		return ;
+	}
+	
+	if (bComboGraphInputPressed)
+	{
+		ComboGraphInputHeldTimeSeconds += DeltaTime;
+	}
+	
+	if (!bComboGraphInputPressed && !bComboGraphInputReleased)
+	{
+		return ;
+	}
+	
+	UGutsComboGraphInputData* InputDataToActivate = nullptr;
+	for (UGutsComboGraphInputData* InputData : NextComboGraphInputList)
+	{
+		if (!InputData || !InputData->InputTag.IsValid() || !InputData->CheckCondition(this))
+		{
+			continue;
+		}
+		
+		if (InputData->ActivationPolicy == EGutsComboGraphInputActivationPolicy::OnInputTriggered)
+		{
+			if (bComboGraphInputPressed && ComboGraphPressedTag.MatchesTag(InputData->InputTag))
+			{
+				InputDataToActivate = InputData;
+				break;
+			}
+		}
+		else if (InputData->ActivationPolicy == EGutsComboGraphInputActivationPolicy::OnInputReleasedMonitor)
+		{
+			if (bComboGraphInputReleased && ComboGraphReleasedTag.MatchesTag(InputData->InputTag) &&ComboGraphInputHeldTimeSeconds <= InputData->DurationLimit)
+			{
+				InputDataToActivate = InputData;
+				break;
+			}
+		}
+		else if (InputData->ActivationPolicy == EGutsComboGraphInputActivationPolicy::OnInputTimeOutMonitor)
+		{
+			if (bComboGraphInputPressed && ComboGraphInputHeldTimeSeconds > InputData->DurationLimit && ComboGraphPressedTag.MatchesTag(InputData->InputTag))
+			{
+				InputDataToActivate = InputData;
+				break;
+			}
+		}
+	}
+	
+	if (InputDataToActivate && InputDataToActivate->OwnerEdge.IsValid())
+	{
+		if (UComboGraphAbilityTask_StartGraph* StartGraphTask = InputDataToActivate->OwnerEdge->K2_GetOwningTask())
+		{
+			if (StartGraphTask->ConfirmComboGraphInput(InputDataToActivate->OwnerEdge.Get()))
+			{
+				InputPressedSpecHandles.Reset();
+				InputReleasedSpecHandles.Reset();
+			}
+		}
+	}
+	
+	if (bComboGraphInputReleased)
+	{
+		ComboGraphInputHeldTimeSeconds = 0.0f;
+	}
+	bComboGraphInputReleased = false;
+}
+
+void UGutsAbilitySystemComponent::ClearComboGraphInput()
+{
+	bComboGraphInputPressed = false;
+	bComboGraphInputReleased = false;
+	ComboGraphInputHeldTimeSeconds = 0.0f;
+	ComboGraphPressedTag = FGameplayTag();
+	ComboGraphReleasedTag = FGameplayTag();
+}
+
 void UGutsAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
 {
 	if (!InputTag.IsValid())
@@ -67,7 +148,7 @@ void UGutsAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& Inp
 	{
 		for (UGutsComboGraphInputData* InputData : NextComboGraphInputList)
 		{
-			if (InputTag.MatchesTagExact(InputData->InputTag))
+			if (InputTag.MatchesTag(InputData->InputTag))
 			{
 				ComboGraphInputPressed(true, InputTag);
 			}
@@ -100,7 +181,7 @@ void UGutsAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& In
 	{
 		for (UGutsComboGraphInputData* InputData : NextComboGraphInputList)
 		{
-			if (InputTag.MatchesTagExact(InputData->InputTag))
+			if (InputTag.MatchesTag(InputData->InputTag))
 			{
 				ComboGraphInputPressed(false);
 				ComboGraphInputReleased(true, InputTag);
@@ -119,6 +200,8 @@ void UGutsAbilitySystemComponent::ProcessAbilityInput(float DeltaTime)
 
 	static TArray<FGameplayAbilitySpecHandle> AbilitiesToActivate;
 	AbilitiesToActivate.Reset();
+	
+	ProcessComboGraphInput(DeltaTime);
 	
 	for (FGameplayAbilitySpecHandle& SpecHandle : InputPressedSpecHandles)
 	{
@@ -210,10 +293,6 @@ void UGutsAbilitySystemComponent::ClearNextComboGraphInputList()
 {
 	NextComboGraphInputList.Reset();
 	
-	bComboGraphInputPressed = false;
-	bComboGraphInputReleased = false;
-	ComboGraphInputHeldTimeSeconds = 0.0f;
-	ComboGraphPressedTag = FGameplayTag();
-	ComboGraphReleasedTag = FGameplayTag();
+	ClearComboGraphInput();
 }
 

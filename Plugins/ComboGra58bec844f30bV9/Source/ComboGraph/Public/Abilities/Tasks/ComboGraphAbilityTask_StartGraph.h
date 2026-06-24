@@ -84,6 +84,8 @@ public:
 
 	/** Provides getter for combo window state for external code to know (namely edges) */
 	bool IsComboWindowOpened() const { return bComboWindowOpened; };
+	
+	bool ConfirmComboGraphInput(UComboGraphEdge* Edge);
 
 protected:
 

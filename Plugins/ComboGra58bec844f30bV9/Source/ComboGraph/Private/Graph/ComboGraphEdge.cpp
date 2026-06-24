@@ -2,6 +2,7 @@
 
 #include "Graph/ComboGraphEdge.h"
 
+#include "Graph/ComboGraphNodeAnimBase.h"
 #include "Net/UnrealNetwork.h"
 
 void UComboGraphEdge::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -48,5 +49,26 @@ void UComboGraphEdge::SetCurrentInputActionInstance(const FInputActionInstance& 
 void UComboGraphEdge::SetNodeTitle(const FText& InTitle)
 {
 	NodeTitle = InTitle;
+}
+
+UComboGraphAbilityTask_StartGraph* UComboGraphEdge::K2_GetOwningTask() const
+{
+	if (const UComboGraphNodeAnimBase* StartAnimNode =Cast<UComboGraphNodeAnimBase>(StartNode))
+	{
+		if (UComboGraphAbilityTask_StartGraph* Task =  StartAnimNode->K2_GetOwningTask())
+		{
+			return Task;
+		}
+	}
+	
+	if (const UComboGraphNodeAnimBase* EndAnimNode =Cast<UComboGraphNodeAnimBase>(EndNode))
+	{
+		if (UComboGraphAbilityTask_StartGraph* Task =  EndAnimNode->K2_GetOwningTask())
+		{
+			return Task;
+		}
+	}
+	
+	return nullptr;
 }
 #endif

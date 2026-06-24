@@ -9,6 +9,7 @@
 #include "UObject/SoftObjectPtr.h"
 #include "ComboGraphEdge.generated.h"
 
+class UComboGraphAbilityTask_StartGraph;
 class UAnimNotify;
 class UComboGraphNodeBase;
 class UInputAction;
@@ -89,6 +90,9 @@ public:
 	/** Enhanced Input Action instance value setter */
 	void SetCurrentInputActionInstance(const FInputActionInstance& CurrentInputActionInstance);
 
+	UFUNCTION(BlueprintCallable, Category = "Combo Graph")
+	UComboGraphAbilityTask_StartGraph* K2_GetOwningTask() const;
+	
 #if WITH_EDITORONLY_DATA
 	// UPROPERTY(EditDefaultsOnly, Category = "Combo Graph")
 	FText NodeTitle;
