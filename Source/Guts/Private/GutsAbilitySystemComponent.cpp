@@ -45,6 +45,95 @@ void UGutsAbilitySystemComponent::ComboGraphInputReleased(bool bActivate, const 
 	ComboGraphReleasedTag = InputTag;
 }
 
+void UGutsAbilitySystemComponent::ComboGraphInputPressedCached(bool bActivate, const FGameplayTag& InputTag)
+{
+	bComboGraphInputPressedCached = bActivate;
+	ComboGraphPressedTag = InputTag;
+}
+
+void UGutsAbilitySystemComponent::ComboGraphInputReleasedCached(const FGameplayTag& InputTag)
+{
+	bComboGraphInputReleasedCached = true;
+	ComboGraphReleasedTag = InputTag;
+}
+
+void UGutsAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid())
+	{
+		return;
+	}
+
+	if (bCanDoComboGraphInputCached)
+	{
+		bComboGraphInputPressedCached = true;
+	}
+	else if (NextComboGraphInputList.Num() > 0)
+	{
+		for (UGutsComboGraphInputData* InputData : NextComboGraphInputList)
+		{
+			if (InputTag.MatchesTag(InputData->InputTag))
+			{
+				ComboGraphInputPressed(true, InputTag);
+			}
+		}
+	}
+	else
+	{
+		for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
+		{
+			if (AbilitySpec.Ability && AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
+			{
+				FGameplayAbilityInputSpecHandle InputHandle;
+				InputHandle.AbilitySpecHandle = AbilitySpec.Handle;
+			
+				InputPressedSpecHandles.AddUnique(AbilitySpec.Handle);
+				InputHeldSpecHandles.AddUnique(InputHandle);
+			}
+		}
+	}
+
+}
+
+void UGutsAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid())
+	{
+		return;
+	}
+
+	if (bCanDoComboGraphInputCached)
+	{
+		bComboGraphInputReleasedCached = true;
+	}
+	else if (NextComboGraphInputList.Num() > 0)
+	{
+		for (UGutsComboGraphInputData* InputData : NextComboGraphInputList)
+		{
+			if (InputTag.MatchesTag(InputData->InputTag))
+			{
+				ComboGraphInputPressed(false);
+				ComboGraphInputReleased(true, InputTag);
+			}
+		}
+	}
+	else
+	{
+		for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
+		{
+			if (AbilitySpec.Ability && AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
+			{
+				FGameplayAbilityInputSpecHandle InputHandle =FindInputHeldSpecHandle(AbilitySpec.Handle);
+				if (InputHandle.IsValid())
+				{
+					InputReleasedSpecHandles.AddUnique(InputHandle);
+					InputHeldSpecHandles.Remove(InputHandle);
+				}
+			}
+		}
+	}
+}
+
 void UGutsAbilitySystemComponent::ProcessComboGraphInput(float DeltaTime)
 {
 	if (NextComboGraphInputList.Num() <= 0)
@@ -125,74 +214,8 @@ void UGutsAbilitySystemComponent::ClearComboGraphInput()
 	ComboGraphReleasedTag = FGameplayTag();
 }
 
-void UGutsAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
-{
-	if (!InputTag.IsValid())
-	{
-		return;
-	}
-
-	for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
-	{
-		if (AbilitySpec.Ability && AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
-		{
-			FGameplayAbilityInputSpecHandle InputHandle;
-			InputHandle.AbilitySpecHandle = AbilitySpec.Handle;
-			
-			InputPressedSpecHandles.AddUnique(AbilitySpec.Handle);
-			InputHeldSpecHandles.AddUnique(InputHandle);
-		}
-	}
-
-	if (NextComboGraphInputList.Num() > 0)
-	{
-		for (UGutsComboGraphInputData* InputData : NextComboGraphInputList)
-		{
-			if (InputTag.MatchesTag(InputData->InputTag))
-			{
-				ComboGraphInputPressed(true, InputTag);
-			}
-		}
-	}
-
-}
-
-void UGutsAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
-{
-	if (!InputTag.IsValid())
-	{
-		return;
-	}
-
-	for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
-	{
-		if (AbilitySpec.Ability && AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
-		{
-			FGameplayAbilityInputSpecHandle InputHandle =FindInputHeldSpecHandle(AbilitySpec.Handle);
-			if (InputHandle.IsValid())
-			{
-				InputReleasedSpecHandles.AddUnique(InputHandle);
-				InputHeldSpecHandles.Remove(InputHandle);
-			}
-		}
-	}
-	
-	if (NextComboGraphInputList.Num() > 0)
-	{
-		for (UGutsComboGraphInputData* InputData : NextComboGraphInputList)
-		{
-			if (InputTag.MatchesTag(InputData->InputTag))
-			{
-				ComboGraphInputPressed(false);
-				ComboGraphInputReleased(true, InputTag);
-			}
-		}
-	}
-}
-
 void UGutsAbilitySystemComponent::ProcessAbilityInput(float DeltaTime)
 {
-	// Centralized input consumption point, matching X6's PlayerController -> ASC ProcessAbilityInput flow.
 	for (FGameplayAbilityInputSpecHandle& InputHeldSpecHandle : InputHeldSpecHandles)
 	{
 		InputHeldSpecHandle.HeldTimeSeconds += DeltaTime;
@@ -220,7 +243,7 @@ void UGutsAbilitySystemComponent::ProcessAbilityInput(float DeltaTime)
 		if (FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(InputSpecHandle.AbilitySpecHandle))
 		{
 			const UGutsGameplayAbility* GutsAbility = Cast<UGutsGameplayAbility>(AbilitySpec->Ability); 
-			if (GutsAbility->ActivationPolicy == EGutsAbilityActivationPolicy::OnInputTimeOut && InputSpecHandle.HeldTimeSeconds >= GutsAbility->ActivationTimeOutPeriod)
+			if (GutsAbility->ActivationPolicy == EGutsAbilityActivationPolicy::OnInputTimeOut && InputSpecHandle.HeldTimeSeconds > GutsAbility->ActivationTimeOutPeriod)
 			{
 				AbilitiesToActivate.AddUnique(AbilitySpec->Handle);
 			}
@@ -237,7 +260,7 @@ void UGutsAbilitySystemComponent::ProcessAbilityInput(float DeltaTime)
 			}
 			
 			const UGutsGameplayAbility* GutsAbility = Cast<UGutsGameplayAbility>(AbilitySpec->Ability); 
-			if (GutsAbility->ActivationPolicy == EGutsAbilityActivationPolicy::OnInputReleased && InputSpecHandle.HeldTimeSeconds < GutsAbility->ActivationTimeOutPeriod)
+			if (GutsAbility->ActivationPolicy == EGutsAbilityActivationPolicy::OnInputReleased && InputSpecHandle.HeldTimeSeconds <= GutsAbility->ActivationTimeOutPeriod)
 			{
 				AbilitiesToActivate.AddUnique(AbilitySpec->Handle);
 			}

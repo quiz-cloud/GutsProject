@@ -69,12 +69,22 @@ protected:
 	FGameplayTag ComboGraphPressedTag;
 	FGameplayTag ComboGraphReleasedTag;
 	
+	bool bCanDoComboGraphInputCached = false;
+	bool bComboGraphInputPressedCached = false;
+	bool bComboGraphInputReleasedCached = false;
+	float CachedComboGraphInputHeldTimeSeconds = 0.f;
+	FGameplayTag ComboGraphInputCachedTags;
 private:
 	FGameplayAbilityInputSpecHandle FindInputHeldSpecHandle(const FGameplayAbilitySpecHandle& InputSpecHandle);
 	
 	void ComboGraphInputPressed(bool bActivate, const FGameplayTag& InputTag = FGameplayTag());
 	void ComboGraphInputReleased(bool bActivate, const FGameplayTag& InputTag = FGameplayTag());
 	
+	void ComboGraphInputPressedCached(bool bActivate, const FGameplayTag& InputTag = FGameplayTag());
+	void ComboGraphInputReleasedCached(const FGameplayTag& InputTag = FGameplayTag());
+	
 	void ProcessComboGraphInput(float DeltaTime);
 	void ClearComboGraphInput();
+	
+	FGameplayTagContainer AllComboInputTags;
 };
